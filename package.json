@@ -1,6 +1,6 @@
 {
 	"name": "jquery-recurrence",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"description": "A jQuery widget for specifying event recurrences in scheduling systems.",
 	"author": "Aram Kocharyan and Eric Winter",
 	"homepage": "https://github.com/ericwinter/jquery-recurrence",
@@ -22,9 +22,7 @@
 	"main": "jquery.recurrence.js",
 	"dependencies": {
 		"jquery": "~2.1.1",
-		"less": "~1.7.0",
-		"rrule": "~2.1.0",
-		"underscore": "~1.7.0",
-		"moment": "~2.22.2"
+		"moment": "~2.22.2",
+		"rrule": "~2.1.0"
 	}
 }
