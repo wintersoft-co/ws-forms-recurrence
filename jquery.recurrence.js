@@ -74,8 +74,7 @@
 								throw new Error('Invalid days set: [' + selectedDays + ']');
 							}
 							plugin.settings._eachDay(function(name, day) {
-								day.$em.toggleClass(plugin.settings.buttonActiveClass,
-												selectedDays.indexOf(name) >= 0);
+								day.$em.toggleClass(plugin.settings.buttonActiveClass, selectedDays.indexOf(name) >= 0);
 							});
 						},
 						toObject: function(mode, plugin) {
@@ -230,7 +229,9 @@
 			$em.append($body);
 			var $untilEnabled = this.$untilEnabled = $('[name="until-enabled"]', $body);;
 			var $until = this.$until = $('[name="until"]', $body);
-			$until.val(moment().add(1, 'month').format('YYYY-MM-DD'));
+			var d = new Date();
+			d.setMonth((d.getMonth() + 1) % 12);
+			$until.val(d.toISOString().substring(0, 10)); // $until.val(moment().add(1, 'month').format('YYYY-MM-DD'));
 			$untilEnabled.on('change', function() {
 				$until.toggle($untilEnabled.is(':checked'));
 			});
@@ -277,13 +278,14 @@
 		},
 
 		toRule: function() {
-			const rule = this._delegateToMode('toRule');
-			if (!this.$untilEnabled.is(':checked')) return rule;
+			var rule = this._delegateToMode('toRule');
+			if (!this.$untilEnabled.is(':checked'))
+				return rule;
 
-			const {origOptions} = rule;
+			var origOptions = $.extend({}, rule.origOptions);
 			// NOTE: This is in the local time zone.
-			origOptions.until = moment(this.$until.val()).toDate();
-			return new RRule({...origOptions});
+			origOptions.until = new Date(this.$until.val()); //moment(this.$until.val()).toDate();
+			return new RRule(origOptions);
 		},
 
 		fromRule: function(arg) {
@@ -302,7 +304,8 @@
 				.prop('checked', rule.origOptions.until != null)
 				.trigger('change');
 			if (rule.origOptions.until != null) {
-				this.$until.val(moment(rule.origOptions.until).format('YYYY-MM-DD'));
+				var d = new Date(rule.origOptions.until);
+				this.$until.val(d.toISOString().substring(0, 10)); // this.$until.val(moment(rule.origOptions.until).format('YYYY-MM-DD'));
 			}
 			// TODO(aramk) Select the current mode based on the "freq" option of the rule.
 			this._delegateToMode('fromRule', rule);
