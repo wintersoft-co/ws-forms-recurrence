@@ -1,4 +1,4 @@
-(function($, window, document, undefined) {
+(function($, window, document, RRule, undefined) {
 	'use strict';
 
 	var pluginName = 'recurrence',
@@ -325,4 +325,4 @@
 		return this;
 	};
 
-})(jQuery, window, document);
+})(jQuery, window, document, window.rrule ? rrule.RRule : window.RRule);
