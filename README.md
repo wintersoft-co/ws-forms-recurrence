@@ -9,16 +9,10 @@ This plugin uses [aramk:rrule](https://github.com/aramk/rrule) to calculate the 
 
 ## Installation
 
-### Bower
+### Npm
 
-	bower install jquery-recurrence --save
+	npm i jquery-recurrence --save
 
-### Meteor
-
-	meteor add aramk:jquery-recurrence
-	
 ## Demo
-
-	bower install
 
 Launch [sample.html](sample.html).
