@@ -2,315 +2,467 @@
 	'use strict';
 
 	var pluginName = 'recurrence',
-			defaults = {
-				modes: {
-					weekly: {
-						label: 'Weekly',
-						init: function(mode, plugin) {
-							var $em = $('<div class="' + mode.name + '"></div>');
-							var $inputs = $('<div class="' + plugin.settings.weekInputClass + '"></div>');
-							$em.append($inputs);
-							$inputs.append('<span>Every </span>');
-							var $weeks = mode.$weeks = $('<input type="text" />').val(1);
-							$inputs.append($weeks);
-							$inputs.append('<span> weeks(s) on:</span>');
-							var $daysBox = $('<div class="days"></div>');
-							var onChange = function() {
-								plugin._triggerChange();
-							};
-							var lastValue = $weeks.val();
-							var inputOnChange = function(e) {
-								var value = $weeks.val();
-								value = value.replace(/[^\d]/g, '');
-								$weeks.val(value);
-								if (lastValue !== value) {
-									onChange();
-								}
-								lastValue = value;
-								// Prevent change event from bubbling since we handle that manually in onChange.
-								e && e.stopPropagation();
-							};
-							var changeHandle;
-							$weeks.on('change', inputOnChange);
-							$weeks.on('keyup', function() {
-								clearInterval(changeHandle);
-								changeHandle = setTimeout(inputOnChange, plugin.settings.changeDelay);
-							});
-							plugin.settings._eachDay(function(name, day) {
-								var $day = $('<button type="button" class="toggle">' + day.label + '</button>');
-								$day.click(function() {
-									var selectedDays = mode.getSelectedDays(mode, plugin);
-									var newDays = selectedDays.filter(function(dayName) {
-										return dayName != name;
-									});
-									if (newDays.length == selectedDays.length) {
-										newDays.push(name);
-									}
-									// If new selection exceeds limit, remove first selection.
-									var maxDays = plugin.settings.maxDays;
-									if (newDays.length > maxDays) {
-										newDays.shift();
-									}
-									mode.setSelectedDays(mode, plugin, newDays);
-									onChange();
-								});
-								$em.append($day);
-								day.$em = $day;
-							});
-							$em.append($daysBox);
-							return $em;
-						},
-						getSelectedDays: function(mode, plugin) {
-							var selectedDays = [];
-							plugin.settings._eachDay(function(name, day) {
-								if (day.$em.hasClass(plugin.settings.buttonActiveClass)) {
-									selectedDays.push(name);
-								}
-							});
-							return selectedDays;
-						},
-						setSelectedDays: function(mode, plugin, selectedDays) {
-							if (!mode.isValidDays(selectedDays, plugin)) {
-								throw new Error('Invalid days set: [' + selectedDays + ']');
-							}
-							plugin.settings._eachDay(function(name, day) {
-								day.$em.toggleClass(plugin.settings.buttonActiveClass, selectedDays.indexOf(name) >= 0);
-							});
-						},
-						toObject: function(mode, plugin) {
-							return {
-								weeks: parseInt(mode.$weeks.val()),
-								days: mode.getSelectedDays(mode, plugin)
-							};
-						},
-						toRule: function(mode, plugin) {
-							var obj = mode.toObject(mode, plugin);
-							return new RRule({
-								freq: RRule.WEEKLY,
-								interval: obj.weeks,
-								byweekday: obj.days.map(function(day) {
-									return plugin.settings.days[day].rule;
-								})
-							});
-						},
-						fromRule: function(mode, plugin, rule) {
-							var options = rule.options;
-							mode.$weeks.val(options.interval);
-							var selectedDays = [];
-							plugin.settings._eachDay(function(name, day) {
-								if (options.byweekday.indexOf(day.rule.weekday) >= 0) {
-									selectedDays.push(name);
-								}
-							});
-							mode.setSelectedDays(mode, plugin, selectedDays);
-						},
-						isRule(rule) {
-							return rule.options.freq === RRule.WEEKLY;
-						},
-						isValidDays: function(days, plugin) {
-							var minDays = plugin.settings.minDays;
-							var maxDays = plugin.settings.maxDays;
-							return !(typeof minDays === 'number' && days.length < minDays ||
-									typeof maxDays === 'number' && days.length > maxDays);
-						}
-					},
+			Plugin, Modes,
+			defaults, days;
 
+	days = {
+		monday: { label: 'M', rule: RRule.MO },
+		tuesday: { label: 'T', rule: RRule.TU },
+		wednesday: { label: 'W', rule: RRule.WE },
+		thursday: { label: 'T', rule: RRule.TH },
+		friday: { label: 'F', rule: RRule.FR },
+		saturday: { label: 'S', rule: RRule.SA },
+		sunday: { label: 'S', rule: RRule.SU }
+	},
 
-					monthly: {
-						label: 'Monthly',
-						init: function(mode, plugin) {
-							var $em = $('<div class="' + mode.name + '"></div>');
-							var $inputs = $('<div class="' + plugin.settings.monthInputClass + '"></div>');
-							$em.append($inputs);
-							$inputs.append('<span>Every </span>');
-							var $months = mode.$months = $('<input type="text" />').val(1);
-							$inputs.append($months);
-							$inputs.append('<span> months(s) on:</span>');
-							var onChange = function() {
-								plugin._triggerChange();
-							};
-							var lastValue = $months.val();
-							var inputOnChange = function(e) {
-								var value = $months.val();
-								value = value.replace(/[^\d]/g, '');
-								$months.val(value);
-								if (lastValue !== value) {
-									onChange();
-								}
-								lastValue = value;
-								// Prevent change event from bubbling since we handle that manually in onChange.
-								e && e.stopPropagation();
-							};
-							var changeHandle;
-							$months.on('change', inputOnChange);
-							$months.on('keyup', function() {
-								clearInterval(changeHandle);
-								changeHandle = setTimeout(inputOnChange, plugin.settings.changeDelay);
-							});
-							return $em;
-						},
-						toObject: function(mode, plugin) {
-							return {
-								months: parseInt(mode.$months.val()),
-							};
-						},
-						toRule: function(mode, plugin) {
-							var obj = mode.toObject(mode, plugin);
-							return new RRule({
-								freq: RRule.MONTHLY,
-								interval: obj.months,
-							});
-						},
-						fromRule: function(mode, plugin, rule) {
-							var options = rule.options;
-							mode.$months.val(options.interval);
-						},
-						isRule(rule) {
-							return rule.options.freq === RRule.MONTHLY;
-						},
-					}
-				},
-				days: {
-					monday: { label: 'M', rule: RRule.MO },
-					tuesday: { label: 'T', rule: RRule.TU },
-					wednesday: { label: 'W', rule: RRule.WE },
-					thursday: { label: 'T', rule: RRule.TH },
-					friday: { label: 'F', rule: RRule.FR },
-					saturday: { label: 'S', rule: RRule.SA },
-					sunday: { label: 'S', rule: RRule.SU }
-				},
-				_eachDay: function(callback, scope) {
-					return Object.keys(this.days).forEach(function(name) {
-						callback.call(scope, name, this.days[name]);
-					}, this);
-				},
-				buttonActiveClass: 'active',
-				weekInputClass: 'week',
-				monthInputClass: 'month',
-				changeDelay: 200,
-				minDays: 1
+	defaults = {
+		// General settings.
+		modes: ['weekly', 'monthly'],
+		debounce: 200,
+		cssPrefix: pluginName,
+
+		// Weekly settings.
+		days: Object.keys(days),
+		//startDayOfWeek: 1,
+		minDays: 1,
+		maxDays: 7,
+
+		strings: {
+			// Frequency.
+			frequencyLabel: 'Frequency',
+			frequencyHint: null,
+
+			// Weekly.
+			weekly: 'Weekly',
+			weeksLabel: 'Every',
+			weeksHint: 'weeks(s)',
+			daysLabel: 'On',
+			daysHint: null,
+			dayNames: Object.keys(days).map(function(day) { return day[0].toUpperCase() + day[1]; }),
+
+			// Monthly.
+			monthly: 'Monthly',
+			monthsLabel: 'Every',
+			monthsHint: 'month(s)',
+
+			// Until.
+			untilLabel: null,
+			untilHint: null,
+			untilEnabledLabel: 'Until'
+		}
+	};
+
+	Modes = {
+		weekly: function(plugin) {
+			var me = this;
+			me.plugin = plugin;
+			me.init();
+		},
+		monthly: function(plugin) {
+			var me = this;
+			me.plugin = plugin;
+			me.init();
+		}
+	};
+
+	Modes.weekly.prototype = {
+		init: function() {
+			var me = this,
+					plugin = me.plugin,
+					settings = plugin.settings,
+					tx = settings.strings,
+					pluginCls = plugin.getCls.bind(plugin),
+					$el, $weeks, $days, $field,
+					lastValue,
+					inputOnChange,
+					changeTimeout;
+
+			// Create wrapper.
+			$el = me.$el = $('<div class="' + pluginCls('fieldset', 'fieldset-weekly') + '"></div>');
+
+			// Create weeks field.
+			$field = $('<label class="' + pluginCls('field', 'field-weeks') + '"></label>')
+
+			if (tx.weeksLabel)
+				$field.append('<span class="' + pluginCls('field-label') + '">' + tx.weeksLabel + '</span>');
+
+			$weeks = me.$weeks = $('<input type="number" min="1" pattern="/^\d+$/"/>');
+			$weeks.val(lastValue = 1);
+			inputOnChange = function(e) {
+				var value = $weeks.val().replace(/[^\d]/g, '');
+				$weeks.val(value);
+				if (lastValue !== value)
+					plugin._triggerChange();
+				lastValue = value;
+				// Prevent change event from bubbling since we handle that manually in onChange.
+				e && e.stopPropagation();
 			};
+			$weeks.on('change', inputOnChange);
+			$weeks.on('keyup', function() {
+				clearTimeout(changeTimeout);
+				changeTimeout = setTimeout(inputOnChange, settings.debounce);
+			});
+			$('<span class="' + pluginCls('field-element') + '"></span>')
+				.append($weeks)
+				.appendTo($field);
 
-	function Plugin(element, options) {
-		this.element = element;
-		this.settings = jQuery.extend(true, {}, defaults, options);
-		this._defaults = defaults;
-		this._name = pluginName;
-		this.currentMode = null;
-		this.init();
+			if (tx.weeksHint)
+				$field.append('<span class="' + pluginCls('field-hint') + '">' + tx.weeksHint + '</span>');
+			$el.append($field);
+
+			// Create days field.
+			$field = $('<label class="' + pluginCls('field', 'field-days') + '"></label>');
+
+			if (tx.daysLabel)
+				$field.append('<span class="' + pluginCls('field-label') + '">' + tx.daysLabel + '</span>');
+
+			$days = $('<span class="' + pluginCls('field-element') + '"></span>');
+			me.days = [];
+			settings.days.forEach(function(name, day) {
+				if (day = days[name]) {
+					var $day = $('<button type="button" class="' + pluginCls('day-' + day.rule.weekday) + '">' + tx.dayNames[day.rule.weekday] + '</button>');
+					$day.on('click', function() {
+						var maxDays = plugin.settings.maxDays,
+								selectedDays = me.getSelectedDays(),
+								newDays = selectedDays.filter(function(dayName) {
+							return dayName != name;
+						});
+						if (newDays.length == selectedDays.length)
+							newDays.push(name);
+
+						// If new selection exceeds limit, remove first selection.
+						if (newDays.length > maxDays)
+							newDays.shift();
+
+						if (me.setSelectedDays(newDays))
+							plugin._triggerChange();
+					});
+					$days.append($day);
+					me.days.push({
+						name: name,
+						selected: false,
+						$el: $day
+					});
+				}
+			});
+			$field.append($days);
+			$el.append($field);
+
+			if (tx.daysHint)
+				$field.append('<span class="' + pluginCls('field-hint') + '">' + tx.daysHint + '</span>');
+
+			$el.append($field);
+		},
+
+		getSelectedDays: function() {
+			var me = this,
+					selectedDays = [];
+			me.days.forEach(function(day) {
+				if (day.selected)
+					selectedDays.push(day.name);
+			});
+			return selectedDays;
+		},
+
+		setSelectedDays: function(selectedDays) {
+			var me = this;
+			if (!me.isValidDays(selectedDays)) {
+				console.warn('Invalid days set: [' + selectedDays + ']');
+				return false;
+			}
+			me.days.forEach(function(day) {
+				day.selected = selectedDays.indexOf(day.name) > -1;
+				day.$el.toggleClass(me.plugin.getCls('active'), day.selected);
+			});
+			return true;
+		},
+
+		toObject: function() {
+			var me = this;
+			return {
+				weeks: parseInt(me.$weeks.val()),
+				days: me.getSelectedDays()
+			};
+		},
+
+		toRule: function() {
+			var me = this,
+					obj = me.toObject();
+			return new RRule({
+				freq: RRule.WEEKLY,
+				interval: obj.weeks,
+				byweekday: obj.days.map(function(name) {
+					return days[name].rule;
+				})
+			});
+		},
+
+		fromRule: function(rule) {
+			var me = this,
+					options = rule.options,
+					selectedDays = [];
+			me.$weeks.val(options.interval);
+			$.each(days, function(name, day) {
+				if (options.byweekday.indexOf(day.rule.weekday) >= 0)
+					selectedDays.push(name);
+			});
+			me.setSelectedDays(selectedDays);
+		},
+
+		isRule(rule) {
+			return rule.options.freq === RRule.WEEKLY;
+		},
+
+		isValidDays: function(days) {
+			var me = this,
+					settings = me.plugin.settings,
+					minDays = settings.minDays,
+					maxDays = settings.maxDays;
+			return (
+				(typeof minDays !== 'number' || days.length >= minDays) &&
+				(typeof maxDays !== 'number' || days.length <= maxDays)
+			);
+		}
+	};
+
+
+	Modes.monthly.prototype = {
+		init: function() {
+			var me = this,
+					plugin = me.plugin,
+					settings = plugin.settings,
+					tx = settings.strings,
+					pluginCls = plugin.getCls.bind(plugin),
+					$el, $months, $field,
+					lastValue,
+					inputOnChange,
+					changeTimeout;
+
+			// Create wrapper.
+			$el = me.$el = $('<div class="' + pluginCls('fieldset', 'fieldset-monthly') + '"></div>');
+
+			// Create weeks field.
+			$field = $('<label class="' + pluginCls('field', 'field-months') + '"></label>')
+
+			if (tx.monthsLabel)
+				$field.append('<span class="' + pluginCls('field-label') + '">' + tx.monthsLabel + '</span>');
+
+			$months = me.$months = $('<input type="number" min="1" pattern="/^\d+$/"/>');
+			$months.val(lastValue = 1);
+			inputOnChange = function(e) {
+				var value = $months.val().replace(/[^\d]/g, '');
+				$months.val(value);
+				if (lastValue !== value)
+					plugin._triggerChange();
+				lastValue = value;
+				// Prevent change event from bubbling since we handle that manually in onChange.
+				e && e.stopPropagation();
+			};
+			$months.on('change', inputOnChange);
+			$months.on('keyup', function() {
+				clearTimeout(changeTimeout);
+				changeTimeout = setTimeout(inputOnChange, settings.debounce);
+			});
+			$('<span class="' + pluginCls('field-element') + '"></span>')
+				.append($months)
+				.appendTo($field);
+
+			if (tx.monthsHint)
+				$field.append('<span class="' + pluginCls('field-hint') + '">' + tx.monthsHint + '</span>');
+			$el.append($field);
+		},
+
+		toObject: function() {
+			return {
+				months: parseInt(this.$months.val()),
+			};
+		},
+
+		toRule: function() {
+			var obj = this.toObject();
+			return new RRule({
+				freq: RRule.MONTHLY,
+				interval: obj.months,
+			});
+		},
+
+		fromRule: function(rule) {
+			var options = rule.options;
+			this.$months.val(options.interval);
+		},
+
+		isRule(rule) {
+			return rule.options.freq === RRule.MONTHLY;
+		},
+	};
+
+
+	Plugin = function(element, options) {
+		var me = this;
+		me.element = element;
+		me.$el = $(element);
+		me.settings = jQuery.extend({}, defaults, options);
+		me.settings.strings = jQuery.extend({}, defaults.strings, options.strings);
+		me._name = pluginName;
+		me.currentMode = null;
+		me.init();
 	}
 
 	Plugin.prototype = {
+		modes: null,
 
 		init: function() {
-			var $em = $(this.element).addClass(pluginName);
-			var $freqSelect = this.$freqSelect = $('<select class="mode"></select>');
-			$em.append($freqSelect);
+			var me = this,
+					settings = me.settings,
+					tx = settings.strings,
+					pluginCls = me.getCls.bind(me),
+					$el = me.$el,
+					$field,
+					$frequency, $until, $untilEnabled,
+					d, m;
+			$el.addClass(pluginName);
 
-			var $body = $('<div class="modes"></div>');
-			$em.append($body);
-			var modes = this.settings.modes;
-			Object.keys(modes).forEach(function(name) {
-				var mode = modes[name];
-				mode.name = name;
-				var $mode = mode.init.call(this, mode, this);
-				var $option = '<option value="' + name + '">' + mode.label + '</option>';
-				$freqSelect.append($option);
-				$body.append($mode.hide());
-				mode.$em = $mode;
-			}, this);
-			var $body = $('\
-				<div class="until">\
-					<input name="until-enabled" type="checkbox"/>\
-					<label>Until</label>\
-					<input name="until" type="date"/>\
-				</div>\
-			');
-			$em.append($body);
-			var $untilEnabled = this.$untilEnabled = $('[name="until-enabled"]', $body);;
-			var $until = this.$until = $('[name="until"]', $body);
-			var d = new Date();
-			d.setMonth((d.getMonth() + 1) % 12);
+			// Create frequency field.
+			$field = $('<label class="' + pluginCls('field', 'field-frequency') + '"></label>')
+
+			if (tx.frequencyLabel)
+				$field.append('<span class="' + pluginCls('field-label') + '">' + tx.frequencyLabel + '</span>');
+
+			$frequency = me.$frequency = $('<select></select>');
+			$frequency.on('change', function() {
+				var val = $frequency.val(),
+						mode = me.modes[val];
+				if (!mode)
+					throw new Error('Unknown mode selected: ' + val);
+				me.hideAll();
+				mode.$el.show();
+				me.currentMode = val;
+			});
+			$('<span class="' + pluginCls('field-element') + '"></span>')
+				.append($frequency)
+				.appendTo($field);
+
+			if (tx.frequencyHint)
+				$field.append('<span class="' + pluginCls('field-hint') + '">' + tx.frequencyHint + '</span>');
+			$el.append($field);
+
+			// Create frequency mode fieldsets.
+			me.modes = {};
+			settings.modes.forEach(function(name) {
+				var mode = new Modes[name](me),
+						$modeEl = mode.$el;
+				$modeEl.hide()
+				$el.append($modeEl);
+				$frequency.append('<option value="' + name + '">' + tx[name] + '</option>');
+				me.modes[name] = mode;
+			});
+			// Hide frequeny select if only one frequency configured.
+			if (settings.modes.length < 2)
+				$field.hide();
+
+			// Create until field.
+			$field = $('<label class="' + pluginCls('field', 'field-until') + '"></label>')
+
+			if (tx.untilLabel)
+				$field.append('<span class="' + pluginCls('field-label') + '">' + tx.untilLabel + '</span>');
+
+			$untilEnabled = me.$untilEnabled = $('<input type="checkbox"/>');
+			$until = me.$until = $('<input type="date"/>');
+
+			// Initialize until to next month.
+			d = new Date();
+			m = d.getMonth() + 1;
+			if (m > 11)
+				d.setFullYear(d.getFullYear() + 1);
+			d.setMonth(m % 12);
 			$until.val(d.toISOString().substring(0, 10)); // $until.val(moment().add(1, 'month').format('YYYY-MM-DD'));
 			$untilEnabled.on('change', function() {
 				$until.toggle($untilEnabled.is(':checked'));
 			});
 			$untilEnabled.trigger('change');
-			$freqSelect.on('change', function() {
-				var val = $freqSelect.val();
-				var mode = modes[val];
-				if (!mode) {
-					throw new Error('Unknown mode selected: ' + val);
-				}
-				this.hideAll();
-				mode.$em.show();
-				this.currentMode = val;
-			}.bind(this));
-			$freqSelect.trigger('change');
+
+			$('<span class="' + pluginCls('field-element') + '"></span>')
+				.append($untilEnabled)
+				.append(tx.untilEnabledLabel && ('<span class="' + pluginCls('field-label') + '">' + tx.untilEnabledLabel + '</span>'))
+				.append($until)
+				.appendTo($field);
+
+			if (tx.untilHint)
+				$field.append('<span class="' + pluginCls('field-hint') + '">' + tx.untilHint + '</span>');
+			$el.append($field);
+
 			// Ensure initial state is consistent.
-			var rule = this.toRule();
-			this.fromRule(rule.toString());
+			$frequency.trigger('change');
+			me.fromRule(settings.recurrenceRule || me.toRule().toString());
 		},
 
 		hideAll: function() {
-			var modes = this.settings.modes;
-			Object.keys(modes).forEach(function(name) {
-				var mode = modes[name];
-				mode.$em.hide();
+			$.each(this.modes, function(_, mode) {
+				mode.$el.hide();
 			});
 		},
 
-		_delegateToMode: function(method) {
-			if (!this.currentMode) {
-				return {};
-			}
-			var modes = this.settings.modes,
-					mode = modes[this.currentMode];
-			var args = [mode, this];
-			// Clone remaining args and pass to the method.
-			var _args = Array.prototype.slice.call(arguments, 1);
-			args = args.concat(_args);
-			return mode[method].apply(this, args);
+		getMode: function(mode) {
+			var me = this,
+					modes = me.modes;
+			return mode && modes[mode] || me.currentMode && modes[me.currentMode];
 		},
 
 		toObject: function() {
-			return this._delegateToMode('toObject');
+			return this.getMode().toObject();
 		},
 
 		toRule: function() {
-			var rule = this._delegateToMode('toRule');
-			if (!this.$untilEnabled.is(':checked'))
+			var me = this,
+					rule = me.getMode().toRule(),
+					origOptions;
+			if (!me.$untilEnabled.is(':checked'))
 				return rule;
 
-			var origOptions = $.extend({}, rule.origOptions);
+			origOptions = $.extend({}, rule.origOptions);
 			// NOTE: This is in the local time zone.
-			origOptions.until = new Date(this.$until.val()); //moment(this.$until.val()).toDate();
+			origOptions.until = new Date(me.$until.val()); //moment(this.$until.val()).toDate();
 			return new RRule(origOptions);
 		},
 
 		fromRule: function(arg) {
-			var rule = typeof arg === 'string' ? new RRule(RRule.parseString(arg)) : arg;
+			var me = this,
+					rule = typeof arg === 'string' ? new RRule(RRule.parseString(arg)) : arg,
+					modeKey, mode;
 			if (!(rule instanceof RRule)) {
 				throw new Error('Invalid argument - must be a string or RRule object: ' + arg);
 			}
-			for (var modeKey in this.settings.modes) {
-				var mode = this.settings.modes[modeKey];
+			for (modeKey in me.modes) {
+				mode = me.modes[modeKey];
 				if (mode.isRule(rule)) {
-					this.currentMode = modeKey;
-					continue;
+					me.currentMode = modeKey;
+					break;
 				}
 			}
-			this.$untilEnabled
-				.prop('checked', rule.origOptions.until != null)
+			me.$untilEnabled
+				.prop('checked', rule.origOptions.until)
 				.trigger('change');
-			if (rule.origOptions.until != null) {
+			if (rule.origOptions.until) {
 				var d = new Date(rule.origOptions.until);
-				this.$until.val(d.toISOString().substring(0, 10)); // this.$until.val(moment(rule.origOptions.until).format('YYYY-MM-DD'));
+				me.$until.val(d.toISOString().substring(0, 10)); // this.$until.val(moment(rule.origOptions.until).format('YYYY-MM-DD'));
 			}
 			// TODO(aramk) Select the current mode based on the "freq" option of the rule.
-			this._delegateToMode('fromRule', rule);
-			this.$freqSelect.val(this.currentMode).trigger('change');
+			me.getMode().fromRule(rule);
+			me.$frequency.val(me.currentMode).trigger('change');
 			this._triggerChange();
+		},
+
+		/**
+		 * Get prefixed css class name from given name(s).
+		 *
+		 * @param {...String} name Single class name or array of such.
+		 * @returns {String} The prefixed class name for given name(s).
+		 */
+		getCls: function(/* names */) {
+			var cssPrefix = this.settings.cssPrefix;
+			return Array.prototype.slice.call(arguments).map(function(name) {
+				return cssPrefix + '-' + name;
+			}).join(' ');
 		},
 
 		_triggerChange: function() {
@@ -319,7 +471,7 @@
 
 	};
 
-	$.fn[ pluginName ] = function(options) {
+	$.fn[pluginName] = function(options) {
 		this.each(function() {
 			if (!$.data(this, 'plugin_' + pluginName)) {
 				$.data(this, 'plugin_' + pluginName, new Plugin(this, options));

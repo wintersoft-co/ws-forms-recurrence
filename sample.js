@@ -1,15 +1,51 @@
 (function($) {
 
 	$(function() {
-		var constructArgs = {
+		// Get date of current day within next month.
+		var d = new Date((new Date()).getTime() + 30 * 24 * 60 * 60 * 1000);
+		var examples = {
 			'#recurrence-1': {
+				// Restrict modes.
+				//modes: ['weekly'],
 			},
 			'#recurrence-2': {
-				maxDays: 1
+				recurrenceRule: 'RRULE:FREQ=MONTHLY;INTERVAL=2;UNTIL=' + d.toISOString().replaceAll(/-|T.+/g, '') + 'T000000Z',
+
+				// Restrict to working days.
+				days: [
+					'monday',
+					'tuesday',
+					'wednesday',
+					'thursday',
+					'friday'
+				],
+				// Restrict selectable number of days.
+				maxDays: 1,
+
+				// Translations. Here german as an example.
+				strings: {
+					// Frequency.
+					frequencyLabel: 'Häufigkeit',
+
+					// Weekly.
+					weekly: 'Wöchentlich',
+					weeksLabel: 'Alle',
+					weeksHint: 'Woche(n)',
+					daysLabel: 'Am',
+					dayNames: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
+
+					// Monthly.
+					monthly: 'Monatlich',
+					monthsLabel: 'Alle',
+					monthsHint: 'Monat(e)',
+
+					// Until.
+					untilEnabledLabel: 'Wiederhole bis'
+				}
 			}
 		};
-		Object.keys(constructArgs).forEach(function(selector) {
-			var $recurrence = $(selector).recurrence(constructArgs[selector]),
+		$.each(examples, function(selector, opts) {
+			var $recurrence = $(selector).recurrence(opts),
 					recurrence = $recurrence.data('plugin_recurrence');
 			$recurrence.on('change', function () {
 				var obj = recurrence.toObject(),
@@ -18,6 +54,7 @@
 				$recurrence.next('.text').text(rule.toText().replace(/^\w/, function(m) {
 					return m.toUpperCase();
 				}));
+				$recurrence.nextAll('.rrule').text(rule.toString());
 			});
 			$recurrence.trigger('change');
 		});
