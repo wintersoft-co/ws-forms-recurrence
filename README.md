@@ -18,12 +18,12 @@ This plugin uses [aramk:rrule](https://github.com/aramk/rrule) to calculate the 
 Launch [sample.html](sample.html).
 
 ## Usage
-`
+```javascript
 $('#container').recurrence(opts)
-`
+```
 
 ## Options
-`
+```javascript
 {
 	// General settings.
 	modes: ['weekly', 'monthly'],
@@ -59,4 +59,4 @@ $('#container').recurrence(opts)
 		untilEnabledLabel: 'Until'
 	}
 }
-`
+```
