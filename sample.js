@@ -2,14 +2,18 @@
 
 	$(function() {
 		// Get date of current day within next month.
-		var d = new Date((new Date()).getTime() + 30 * 24 * 60 * 60 * 1000);
-		var examples = {
+		var today = new Date(),
+				nextMonth = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000),
+				examples;
+
+		examples = {
 			'#recurrence-1': {
 				// Restrict modes.
 				//modes: ['weekly'],
 			},
 			'#recurrence-2': {
-				recurrenceRule: 'RRULE:FREQ=MONTHLY;INTERVAL=2;UNTIL=' + d.toISOString().replaceAll(/-|T.+/g, '') + 'T000000Z',
+				recurrenceRule: 'RRULE:FREQ=MONTHLY;INTERVAL=2;UNTIL=' + nextMonth.toISOString().replaceAll(/-|T.+/g, '') + 'T000000',
+				timezone: 'Europe/Berlin',
 
 				// Restrict to working days.
 				days: [

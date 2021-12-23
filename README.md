@@ -29,6 +29,7 @@ $('#container').recurrence(opts)
 	modes: ['weekly', 'monthly'],
 	debounce: 200,
 	cssPrefix: 'recurrence',
+	timezone: null, // A valid IANA Timezone name.
 
 	// Weekly settings.
 	days: ['monday', 'tuesday', ...],

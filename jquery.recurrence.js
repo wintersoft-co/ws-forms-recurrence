@@ -1,7 +1,8 @@
-(function($, window, document, RRule, undefined) {
+(function($, window) {
 	'use strict';
 
 	var pluginName = 'recurrence',
+			RRule = window.rrule ? rrule.RRule : window.RRule,
 			Plugin, Modes,
 			defaults, days;
 
@@ -20,6 +21,7 @@
 		modes: ['weekly', 'monthly'],
 		debounce: 200,
 		cssPrefix: pluginName,
+		timezone: null,
 
 		// Weekly settings.
 		days: Object.keys(days),
@@ -282,7 +284,7 @@
 			var obj = this.toObject();
 			return new RRule({
 				freq: RRule.MONTHLY,
-				interval: obj.months,
+				interval: obj.months
 			});
 		},
 
@@ -409,29 +411,38 @@
 		},
 
 		toObject: function() {
-			return this.getMode().toObject();
+			var me = this,
+					obj = me.getMode().toObject(),
+					until;
+			if (!me.$untilEnabled.is(':checked') || !(until = me.getUntilDate()))
+				return obj;
+
+			return $.extend({}, obj, {
+				until: until
+			});
 		},
 
 		toRule: function() {
 			var me = this,
+					tz = me.settings.timezone,
 					rule = me.getMode().toRule(),
-					origOptions;
-			if (!me.$untilEnabled.is(':checked'))
+					until;
+			if (!me.$untilEnabled.is(':checked') || !(until = me.getUntilDate()))
 				return rule;
 
-			origOptions = $.extend({}, rule.origOptions);
-			// NOTE: This is in the local time zone.
-			origOptions.until = new Date(me.$until.val()); //moment(this.$until.val()).toDate();
-			return new RRule(origOptions);
+			return new RRule($.extend({}, rule.origOptions, {
+				until: until,
+				tzid: tz === null ? 'UTC' : null
+			}));
 		},
 
 		fromRule: function(arg) {
 			var me = this,
-					rule = typeof arg === 'string' ? new RRule(RRule.parseString(arg)) : arg,
+					rule = typeof arg === 'string' ? RRule.fromString(arg) : arg,
 					modeKey, mode;
-			if (!(rule instanceof RRule)) {
+			if (!(rule instanceof RRule))
 				throw new Error('Invalid argument - must be a string or RRule object: ' + arg);
-			}
+
 			for (modeKey in me.modes) {
 				mode = me.modes[modeKey];
 				if (mode.isRule(rule)) {
@@ -440,7 +451,7 @@
 				}
 			}
 			me.$untilEnabled
-				.prop('checked', rule.origOptions.until)
+				.prop('checked', !!rule.origOptions.until)
 				.trigger('change');
 			if (rule.origOptions.until) {
 				var d = new Date(rule.origOptions.until);
@@ -465,6 +476,24 @@
 			}).join(' ');
 		},
 
+		getUntilDate: function() {
+			var me = this,
+					tz = me.settings.timezone,
+					until;
+			if (!me.$untilEnabled.is(':checked') || !(until = me.$until.val()))
+				return null;
+
+			until = new Date(until + 'T00:00:00' + (tz === null ? 'Z' : ''));
+			if (tz !== null) {
+				// Use RRule timezone functionality to calculate until at given timezone.
+				until = (new RRule({ dtstart: until, tzid: tz })).all(function(_, i) {
+					return i < 1;
+				})[0];
+			}
+
+			return until;
+		},
+
 		_triggerChange: function() {
 			$(this.element).trigger('change');
 		}
@@ -480,4 +509,4 @@
 		return this;
 	};
 
-})(jQuery, window, document, window.rrule ? rrule.RRule : window.RRule);
+})(jQuery, window);
