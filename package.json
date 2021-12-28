@@ -1,6 +1,6 @@
 {
 	"name": "ws-forms-recurrence",
-	"version": "0.3.1",
+	"version": "0.3.2",
 	"description": "A jQuery widget for specifying event recurrences in scheduling systems.",
 	"author": "Aram Kocharyan and Eric Winter",
 	"homepage": "https://github.com/wintersoft-co/ws-forms-recurrence",
