@@ -3,25 +3,25 @@ html, body {
 	font: 12px sans-serif;
 }
 
-.recurrence {
+.ws-form-wrap {
 	margin: 0 0 1em;
 	padding: 1em;
 	border: 1px solid #000;
 }
-.recurrence-field {
+.ws-form-field {
 	display: block;
 	margin: 0 0 1em;
 }
-.recurrence-field-label {
+.ws-form-field-label {
 	margin-right: .5em;
 }
-.recurrence-field-hint {
+.ws-form-field-hint {
 	margin-left: .5em;
 }
-.recurrence-field-days button {
+.ws-form-field-days button {
 	opacity: 0.5;
 }
-.recurrence-field-days button.recurrence-active {
+.ws-form-field-days button.ws-form-active {
 	opacity: 1;
 }
 

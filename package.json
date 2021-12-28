@@ -1,9 +1,9 @@
 {
-	"name": "jquery-recurrence",
+	"name": "ws-forms-recurrence",
 	"version": "0.3.1",
 	"description": "A jQuery widget for specifying event recurrences in scheduling systems.",
 	"author": "Aram Kocharyan and Eric Winter",
-	"homepage": "https://github.com/ericwinter/jquery-recurrence",
+	"homepage": "https://github.com/wintersoft-co/ws-forms-recurrence",
 	"license": "MIT",
 	"keywords": [
 		"date",
@@ -12,14 +12,15 @@
 		"calendar",
 		"icalendar",
 		"rfc",
+		"form",
 		"jquery",
 		"input"
 	],
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/ericwinter/jquery-recurrence.git"
+		"url": "https://github.com/wintersoft-co/ws-forms-recurrence.git"
 	},
-	"main": "jquery.recurrence.js",
+	"main": "ws-forms-recurrence.js",
 	"dependencies": {
 		"jquery": "^2.1.1 || ~3.6.0",
 		"rrule": "^2.1.0"

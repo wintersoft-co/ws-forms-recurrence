@@ -1,9 +1,9 @@
-jquery-recurrence
+ws-forms-recurrence
 =================
 
 A jQuery widget for specifying event recurrences in scheduling systems.
 
-![screenshot](docs/screenshots/jquery-recurrence.png?raw=true)
+![screenshot](docs/screenshots/ws-forms-recurrence.png?raw=true)
 
 This plugin uses [aramk:rrule](https://github.com/aramk/rrule) to calculate the recurrence rules.
 
@@ -11,7 +11,7 @@ This plugin uses [aramk:rrule](https://github.com/aramk/rrule) to calculate the 
 
 ### Npm
 
-	npm i jquery-recurrence --save
+	npm i ws-forms-recurrence --save
 
 ## Demo
 
@@ -19,16 +19,28 @@ Launch [sample.html](sample.html).
 
 ## Usage
 ```javascript
-$('#container').recurrence(opts)
+// Initialization.
+$('#container').wsFormsRecurrence(opts);
+
+// Instance access
+$('#container').data('plugin-wsFormsRecurrence');
+```
+Or
+```javascript
+// Directly create instance.
+new ws.forms.Recurrence('#container', opts);
 ```
 
-## Options
+See [sample.html](sample.html) for more details.
+
+
+## Default Options
 ```javascript
 {
 	// General settings.
 	modes: ['weekly', 'monthly'],
 	debounce: 200,
-	cssPrefix: 'recurrence',
+	cssPrefix: 'ws-form',
 	timezone: null, // A valid IANA Timezone name.
 
 	// Weekly settings.

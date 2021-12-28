@@ -49,8 +49,8 @@
 			}
 		};
 		$.each(examples, function(selector, opts) {
-			var $recurrence = $(selector).recurrence(opts),
-					recurrence = $recurrence.data('plugin_recurrence');
+			var $recurrence = $(selector).wsFormsRecurrence(opts),
+					recurrence = $recurrence.data('plugin-wsFormsRecurrence');
 			$recurrence.on('change', function () {
 				var obj = recurrence.toObject(),
 						rule = recurrence.toRule();

@@ -1,7 +1,7 @@
 (function($, window) {
 	'use strict';
 
-	var pluginName = 'recurrence',
+	var pluginName = 'wsFormsRecurrence',
 			RRule = window.rrule ? rrule.RRule : window.RRule,
 			Plugin, Modes,
 			defaults, days;
@@ -20,7 +20,7 @@
 		// General settings.
 		modes: ['weekly', 'monthly'],
 		debounce: 200,
-		cssPrefix: pluginName,
+		cssPrefix: 'ws-form',
 		timezone: null,
 
 		// Weekly settings.
@@ -299,12 +299,12 @@
 	};
 
 
-	Plugin = function(element, options) {
+	Plugin = function(element, opts) {
 		var me = this;
-		me.element = element;
 		me.$el = $(element);
-		me.settings = jQuery.extend({}, defaults, options);
-		me.settings.strings = jQuery.extend({}, defaults.strings, options.strings);
+		me.element = me.$el[0];
+		me.settings = jQuery.extend({}, defaults, opts);
+		me.settings.strings = jQuery.extend({}, defaults.strings, opts.strings);
 		me._name = pluginName;
 		me.currentMode = null;
 		me.init();
@@ -322,7 +322,7 @@
 					$field,
 					$frequency, $until, $untilEnabled,
 					d, m;
-			$el.addClass(pluginName);
+			$el.addClass(pluginCls('wrap', 'wrap-recurrence'));
 
 			// Create frequency field.
 			$field = $('<label class="' + pluginCls('field', 'field-frequency') + '"></label>')
@@ -500,13 +500,21 @@
 
 	};
 
-	$.fn[pluginName] = function(options) {
+	// Register as jQuery plugin.
+	$.fn[pluginName] = function(opts) {
 		this.each(function() {
-			if (!$.data(this, 'plugin_' + pluginName)) {
-				$.data(this, 'plugin_' + pluginName, new Plugin(this, options));
-			}
+			var me = this,
+					dataKey = 'plugin-' + pluginName;
+			if (!$.data(me, dataKey))
+				$.data(me, dataKey, new Plugin(me, opts));
 		});
 		return this;
 	};
+
+	// Register ws namespace.
+	var ns = window.ws = (window.ws || {});
+	ns.forms = $.extend(ns.forms || {}, {
+		Recurrence: Plugin
+	});
 
 })(jQuery, window);
