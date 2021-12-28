@@ -83,7 +83,7 @@
 			$el = me.$el = $('<div class="' + pluginCls('fieldset', 'fieldset-weekly') + '"></div>');
 
 			// Create weeks field.
-			$field = $('<label class="' + pluginCls('field', 'field-weeks') + '"></label>')
+			$field = $('<label class="' + pluginCls('field', 'field-weeks') + '"></label>');
 
 			if (tx.weeksLabel)
 				$field.append('<span class="' + pluginCls('field-label') + '">' + tx.weeksLabel + '</span>');
@@ -211,7 +211,7 @@
 			me.setSelectedDays(selectedDays);
 		},
 
-		isRule(rule) {
+		isRule: function(rule) {
 			return rule.options.freq === RRule.WEEKLY;
 		},
 
@@ -244,7 +244,7 @@
 			$el = me.$el = $('<div class="' + pluginCls('fieldset', 'fieldset-monthly') + '"></div>');
 
 			// Create weeks field.
-			$field = $('<label class="' + pluginCls('field', 'field-months') + '"></label>')
+			$field = $('<label class="' + pluginCls('field', 'field-months') + '"></label>');
 
 			if (tx.monthsLabel)
 				$field.append('<span class="' + pluginCls('field-label') + '">' + tx.monthsLabel + '</span>');
@@ -276,7 +276,7 @@
 
 		toObject: function() {
 			return {
-				months: parseInt(this.$months.val()),
+				months: parseInt(this.$months.val())
 			};
 		},
 
@@ -293,9 +293,9 @@
 			this.$months.val(options.interval);
 		},
 
-		isRule(rule) {
+		isRule: function(rule) {
 			return rule.options.freq === RRule.MONTHLY;
-		},
+		}
 	};
 
 
