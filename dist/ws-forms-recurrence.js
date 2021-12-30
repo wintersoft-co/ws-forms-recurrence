@@ -89,7 +89,9 @@
 				$field.append('<span class="' + pluginCls('field-label') + '">' + tx.weeksLabel + '</span>');
 
 			$weeks = me.$weeks = $('<input type="number" min="1" pattern="/^\d+$/"/>');
-			$weeks.val(lastValue = 1);
+			//$weeks.val(lastValue = 1);
+			// Set initial value using attr() to prevent clearing during form reset.
+			$weeks.attr('value', lastValue = 1);
 			inputOnChange = function(e) {
 				var value = $weeks.val().replace(/[^\d]/g, '');
 				$weeks.val(value);
@@ -250,7 +252,9 @@
 				$field.append('<span class="' + pluginCls('field-label') + '">' + tx.monthsLabel + '</span>');
 
 			$months = me.$months = $('<input type="number" min="1" pattern="/^\d+$/"/>');
-			$months.val(lastValue = 1);
+			//$months.val(lastValue = 1);
+			// Set initial value using attr() to prevent clearing during form reset.
+			$months.attr('value', lastValue = 1);
 			inputOnChange = function(e) {
 				var value = $months.val().replace(/[^\d]/g, '');
 				$months.val(value);
@@ -377,7 +381,9 @@
 			if (m > 11)
 				d.setFullYear(d.getFullYear() + 1);
 			d.setMonth(m % 12);
-			$until.val(d.toISOString().substring(0, 10)); // $until.val(moment().add(1, 'month').format('YYYY-MM-DD'));
+			//$until.val(d.toISOString().substring(0, 10)); // $until.val(moment().add(1, 'month').format('YYYY-MM-DD'));
+			// Set initial value using attr() to prevent clearing during form reset.
+			$until.attr('value', d.toISOString().substring(0, 10)); // $until.val(moment().add(1, 'month').format('YYYY-MM-DD'));
 			$untilEnabled.on('change', function() {
 				$until.toggle($untilEnabled.is(':checked'));
 			});
@@ -457,7 +463,6 @@
 				var d = new Date(rule.origOptions.until);
 				me.$until.val(d.toISOString().substring(0, 10)); // this.$until.val(moment(rule.origOptions.until).format('YYYY-MM-DD'));
 			}
-			// TODO(aramk) Select the current mode based on the "freq" option of the rule.
 			me.getMode().fromRule(rule);
 			me.$frequency.val(me.currentMode).trigger('change');
 			this._triggerChange();
