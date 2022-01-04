@@ -5,7 +5,7 @@ A jQuery widget for specifying event recurrences in scheduling systems.
 
 ![screenshot](docs/screenshots/ws-forms-recurrence.png?raw=true)
 
-This plugin uses [aramk:rrule](https://github.com/aramk/rrule) to calculate the recurrence rules.
+This plugin uses [jakubroztocil:rrule](https://jakubroztocil.github.io/rrule) to calculate the recurrence rules.
 
 ## Installation
 
