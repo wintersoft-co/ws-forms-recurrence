@@ -115,7 +115,7 @@
 			$el.append($field);
 
 			// Create days field.
-			$field = $('<label class="' + pluginCls('field', 'field-days') + '"></label>');
+			$field = $('<div class="' + pluginCls('field', 'field-days') + '"></div>');
 
 			if (tx.daysLabel)
 				$field.append('<span class="' + pluginCls('field-label') + '">' + tx.daysLabel + '</span>');
