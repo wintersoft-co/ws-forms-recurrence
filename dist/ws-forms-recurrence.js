@@ -26,7 +26,7 @@
 		// Weekly settings.
 		days: Object.keys(days),
 		//startDayOfWeek: 1,
-		minDays: 1,
+		minDays: 0,
 		maxDays: 7,
 
 		strings: {
@@ -204,10 +204,12 @@
 		fromRule: function(rule) {
 			var me = this,
 					options = rule.options,
+					// Because of inconsistencies in RRule lib we have to use origOptions.byweekday here.
+					byweekday = rule.origOptions.byweekday || [],
 					selectedDays = [];
 			me.$weeks.val(options.interval);
 			$.each(days, function(name, day) {
-				if (options.byweekday.indexOf(day.rule.weekday) >= 0)
+				if (byweekday.indexOf(day.rule.weekday) >= 0)
 					selectedDays.push(name);
 			});
 			me.setSelectedDays(selectedDays);

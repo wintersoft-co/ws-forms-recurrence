@@ -45,7 +45,7 @@ See [sample.html](sample.html) for more details.
 
 	// Weekly settings.
 	days: ['monday', 'tuesday', ...],
-	minDays: 1,
+	minDays: 0,
 	maxDays: 7,
 
 	strings: {
