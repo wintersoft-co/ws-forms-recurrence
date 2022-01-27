@@ -5,8 +5,6 @@ A jQuery widget for specifying event recurrences in scheduling systems.
 
 ![screenshot](docs/screenshots/ws-forms-recurrence.png?raw=true)
 
-This plugin uses [jakubroztocil:rrule](https://jakubroztocil.github.io/rrule) to calculate the recurrence rules.
-
 ## Installation
 
 ### Npm
@@ -18,18 +16,28 @@ This plugin uses [jakubroztocil:rrule](https://jakubroztocil.github.io/rrule) to
 Launch [sample.html](sample.html).
 
 ## Usage
+```html
+<script type="text/javascript" src="node_modules/jquery/dist/jquery.min.js"></script>
+<!-- If using timezones include luxon library.
+<script type="text/javascript" src="node_modules/luxon/build/global/luxon.min.js"></script>
+-->
+<script type="text/javascript" src="node_modules/ws-forms-recurrence/dist/ws-forms-recurrence.min.js"></script>
+```
+
 ```javascript
 // Initialization.
 $('#container').wsFormsRecurrence(opts);
 
 // Instance access
-$('#container').data('plugin-wsFormsRecurrence');
+$('#container').data('ws.forms.recurrence');
 ```
 Or
 ```javascript
 // Directly create instance.
 new ws.forms.Recurrence('#container', opts);
 ```
+
+By default everything is in local time. If you want to create timezone based recurrences include the [luxon](https://github.com/moment/luxon/) library before ws-forms-recurrence script and pass an IANA timezone name in the recurrence options.
 
 See [sample.html](sample.html) for more details.
 
@@ -59,7 +67,7 @@ See [sample.html](sample.html) for more details.
 		weeksHint: 'weeks(s)',
 		daysLabel: 'On',
 		daysHint: null,
-		dayNames: ['Mo', 'Di', ...],
+		dayNames: ['Su', 'Mo', 'Di', ...], // 0-based.
 
 		// Monthly.
 		monthly: 'Monthly',

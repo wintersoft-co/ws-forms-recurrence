@@ -1,9 +1,11 @@
-(function($) {
+(function($, DateTime) {
 
 	$(function() {
-		// Get date of current day within next month.
-		var today = new Date(),
-				nextMonth = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000),
+		var timezone = 'Europe/Berlin',
+				// Calculate midnight next month at timezone.
+				nextMonth = DateTime.fromObject({}, { zone: timezone }).plus({ months: 1 }).startOf('day'),
+				// Format midnight next month to RRule-timestamp-format at UTC timezone.
+				until = nextMonth.toUTC().toFormat('yyyyLLdd\'T\'HHmmss\'Z\''),
 				examples;
 
 		examples = {
@@ -12,8 +14,8 @@
 				//modes: ['weekly'],
 			},
 			'#recurrence-2': {
-				recurrenceRule: 'RRULE:FREQ=MONTHLY;INTERVAL=2;UNTIL=' + nextMonth.toISOString().replaceAll(/-|T.+/g, '') + 'T000000',
-				timezone: 'Europe/Berlin',
+				recurrenceRule: 'RRULE:FREQ=MONTHLY;INTERVAL=2;UNTIL=' + until,
+				timezone: timezone,
 
 				// Restrict to working days.
 				days: [
@@ -36,7 +38,7 @@
 					weeksLabel: 'Alle',
 					weeksHint: 'Woche(n)',
 					daysLabel: 'Am',
-					dayNames: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
+					dayNames: ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'],
 
 					// Monthly.
 					monthly: 'Monatlich',
@@ -50,18 +52,15 @@
 		};
 		$.each(examples, function(selector, opts) {
 			var $recurrence = $(selector).wsFormsRecurrence(opts),
-					recurrence = $recurrence.data('plugin-wsFormsRecurrence');
-			$recurrence.on('change', function () {
-				var obj = recurrence.toObject(),
+					recurrence = $recurrence.data('ws.forms.recurrence');
+			$recurrence.on('change', function() {
+				var obj = recurrence.toRuleObj(),
 						rule = recurrence.toRule();
 				console.log('obj', obj);
-				$recurrence.next('.text').text(rule.toText().replace(/^\w/, function(m) {
-					return m.toUpperCase();
-				}));
-				$recurrence.nextAll('.rrule').text(rule.toString());
+				$recurrence.nextAll('.rrule').text(rule);
 			});
 			$recurrence.trigger('change');
 		});
 	});
 
-})(jQuery);
+})(jQuery, luxon.DateTime);

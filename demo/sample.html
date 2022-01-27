@@ -5,13 +5,7 @@
 	<title>jQuery Recurrence Sample</title>
 	<link rel="stylesheet" href="sample.css"/>
 	<script type="text/javascript" src="../node_modules/jquery/dist/jquery.min.js"></script>
-
-	<!-- If using older version of rrule, include it like this:
-	<script type="text/javascript" src="node_modules/rrule/lib/rrule.js"></script>
-	<script type="text/javascript" src="node_modules/rrule/lib/nlp.js"></script>
-	-->
-	<script type="text/javascript" src="../node_modules/rrule/dist/es5/rrule-tz.min.js"></script>
-
+	<script type="text/javascript" src="../node_modules/luxon/build/global/luxon.min.js"></script>
 	<script type="text/javascript" src="../dist/ws-forms-recurrence.min.js"></script>
 	<script type="text/javascript" src="sample.js"></script>
 </head>
@@ -20,7 +14,6 @@
 	<div class="sample-container">
 		<p>Default settings recurrence.</p>
 		<div id="recurrence-1"></div>
-		<p class="text"></p>
 		<p class="rrule"></p>
 	</div>
 
@@ -31,7 +24,6 @@
 			and translated to german.
 		</p>
 		<div id="recurrence-2"></div>
-		<p class="text"></p>
 		<p class="rrule"></p>
 	</div>
 

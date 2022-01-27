@@ -1,19 +1,18 @@
 (function($, window) {
 	'use strict';
 
-	var pluginName = 'wsFormsRecurrence',
-			RRule = window.rrule ? rrule.RRule : window.RRule,
-			Plugin, Modes,
+	var DateTime = window.luxon && window.luxon.DateTime,
+			RecurrenceForm, Modes,
 			defaults, days;
 
 	days = {
-		monday: { label: 'M', rule: RRule.MO },
-		tuesday: { label: 'T', rule: RRule.TU },
-		wednesday: { label: 'W', rule: RRule.WE },
-		thursday: { label: 'T', rule: RRule.TH },
-		friday: { label: 'F', rule: RRule.FR },
-		saturday: { label: 'S', rule: RRule.SA },
-		sunday: { label: 'S', rule: RRule.SU }
+		monday: { byday: 'MO', index: 1 },
+		tuesday: { byday: 'TU', index: 2 },
+		wednesday: { byday: 'WE', index: 3 },
+		thursday: { byday: 'TH', index: 4 },
+		friday: { byday: 'FR', index: 5 },
+		saturday: { byday: 'SA', index: 6 },
+		sunday: { byday: 'SU', index: 0 }
 	},
 
 	defaults = {
@@ -40,7 +39,7 @@
 			weeksHint: 'weeks(s)',
 			daysLabel: 'On',
 			daysHint: null,
-			dayNames: Object.keys(days).map(function(day) { return day[0].toUpperCase() + day[1]; }),
+			dayNames: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'], // Object.keys(days).map(function(day) { return day[0].toUpperCase() + day[1]; }),
 
 			// Monthly.
 			monthly: 'Monthly',
@@ -124,7 +123,7 @@
 			me.days = [];
 			settings.days.forEach(function(name, day) {
 				if (day = days[name]) {
-					var $day = $('<button type="button" class="' + pluginCls('day-' + day.rule.weekday) + '">' + tx.dayNames[day.rule.weekday] + '</button>');
+					var $day = $('<button type="button" class="' + pluginCls('day-' + day.index) + '">' + tx.dayNames[day.index] + '</button>');
 					$day.on('click', function() {
 						var maxDays = plugin.settings.maxDays,
 								selectedDays = me.getSelectedDays(),
@@ -181,42 +180,34 @@
 			return true;
 		},
 
-		toObject: function() {
-			var me = this;
-			return {
-				weeks: parseInt(me.$weeks.val()),
-				days: me.getSelectedDays()
-			};
-		},
-
-		toRule: function() {
+		toRuleObj: function() {
 			var me = this,
-					obj = me.toObject();
-			return new RRule({
-				freq: RRule.WEEKLY,
-				interval: obj.weeks,
-				byweekday: obj.days.map(function(name) {
-					return days[name].rule;
-				})
+					obj, byday;
+			byday = me.getSelectedDays().map(function(name) {
+				return days[name].byday;
 			});
+			obj = {
+				freq: 'WEEKLY',
+				interval: parseInt(me.$weeks.val())
+			};
+			if (byday.length)
+				obj.byday = byday;
+			return obj;
 		},
 
-		fromRule: function(rule) {
+		fromRuleObj: function(rule) {
 			var me = this,
-					options = rule.options,
-					// Because of inconsistencies in RRule lib we have to use origOptions.byweekday here.
-					byweekday = rule.origOptions.byweekday || [],
 					selectedDays = [];
-			me.$weeks.val(options.interval);
-			$.each(days, function(name, day) {
-				if (byweekday.indexOf(day.rule.weekday) >= 0)
+			me.$weeks.val(rule.interval);
+			rule.byday && $.each(days, function(name, day) {
+				if (rule.byday.indexOf(day.byday) > -1)
 					selectedDays.push(name);
 			});
 			me.setSelectedDays(selectedDays);
 		},
 
 		isRule: function(rule) {
-			return rule.options.freq === RRule.WEEKLY;
+			return rule.freq === 'WEEKLY';
 		},
 
 		isValidDays: function(days) {
@@ -280,43 +271,34 @@
 			$el.append($field);
 		},
 
-		toObject: function() {
+		toRuleObj: function() {
 			return {
-				months: parseInt(this.$months.val())
+				freq: 'MONTHLY',
+				interval: parseInt(this.$months.val())
 			};
 		},
 
-		toRule: function() {
-			var obj = this.toObject();
-			return new RRule({
-				freq: RRule.MONTHLY,
-				interval: obj.months
-			});
-		},
-
-		fromRule: function(rule) {
-			var options = rule.options;
-			this.$months.val(options.interval);
+		fromRuleObj: function(rule) {
+			this.$months.val(rule.interval);
 		},
 
 		isRule: function(rule) {
-			return rule.options.freq === RRule.MONTHLY;
+			return rule.freq === 'MONTHLY';
 		}
 	};
 
 
-	Plugin = function(element, opts) {
+	RecurrenceForm = function(element, opts) {
 		var me = this;
 		me.$el = $(element);
 		me.element = me.$el[0];
 		me.settings = jQuery.extend({}, defaults, opts);
 		me.settings.strings = jQuery.extend({}, defaults.strings, opts.strings);
-		me._name = pluginName;
 		me.currentMode = null;
 		me.init();
 	}
 
-	Plugin.prototype = {
+	RecurrenceForm.prototype = {
 		modes: null,
 
 		init: function() {
@@ -338,13 +320,14 @@
 
 			$frequency = me.$frequency = $('<select></select>');
 			$frequency.on('change', function() {
-				var val = $frequency.val(),
-						mode = me.modes[val];
-				if (!mode)
-					throw new Error('Unknown mode selected: ' + val);
-				me.hideAll();
-				mode.$el.show();
-				me.currentMode = val;
+				var value = $frequency.val();
+				if (!me.modes[value])
+					throw new Error('Unknown mode selected: ' + value);
+				$.each(me.modes, function(name, mode) {
+					mode.$el.toggle(name === value);
+				});
+				// mode.$el.show();
+				me.currentMode = value;
 			});
 			$('<span class="' + pluginCls('field-element') + '"></span>')
 				.append($frequency)
@@ -403,13 +386,7 @@
 
 			// Ensure initial state is consistent.
 			$frequency.trigger('change');
-			me.fromRule(settings.recurrenceRule || me.toRule().toString());
-		},
-
-		hideAll: function() {
-			$.each(this.modes, function(_, mode) {
-				mode.$el.hide();
-			});
+			me.fromRule(settings.recurrenceRule || me.toRule());
 		},
 
 		getMode: function(mode) {
@@ -418,56 +395,74 @@
 			return mode && modes[mode] || me.currentMode && modes[me.currentMode];
 		},
 
-		toObject: function() {
+		toRuleObj: function() {
 			var me = this,
-					obj = me.getMode().toObject(),
+					rule = me.getMode().toRuleObj(),
 					until;
-			if (!me.$untilEnabled.is(':checked') || !(until = me.getUntilDate()))
-				return obj;
+			if (me.$untilEnabled.is(':checked') && (until = me.getUntilDate()))
+				rule.until = until;
 
-			return $.extend({}, obj, {
-				until: until
-			});
+			return rule;
 		},
 
 		toRule: function() {
 			var me = this,
-					tz = me.settings.timezone,
-					rule = me.getMode().toRule(),
-					until;
-			if (!me.$untilEnabled.is(':checked') || !(until = me.getUntilDate()))
-				return rule;
+					rule = me.toRuleObj(),
+					until = rule.until,
+					parts = [];
+			if (until)
+				rule.until = until.toISOString().substr(0, 19).replace(/-|:/g, '') + 'Z';
 
-			return new RRule($.extend({}, rule.origOptions, {
-				until: until,
-				tzid: tz === null ? 'UTC' : null
-			}));
+			$.each(rule, function(k, v) {
+				if (k === 'byday')
+					v = v.join(',');
+				if (v)
+					parts.push(k.toUpperCase() + '=' + v);
+			});
+			return 'RRULE:' + parts.join(';');
 		},
 
 		fromRule: function(arg) {
 			var me = this,
-					rule = typeof arg === 'string' ? RRule.fromString(arg) : arg,
-					modeKey, mode;
-			if (!(rule instanceof RRule))
-				throw new Error('Invalid argument - must be a string or RRule object: ' + arg);
+					modeKey, mode, obj;
+
+			// Parse RRule.
+			// e.g.: RRULE:FREQ=WEEKLY;INTERVAL=5;BYDAY=MO,FR;UNTIL=20221231T000000
+			obj = {
+				freq: null,
+				interval: null
+			};
+			arg = arg.toUpperCase();
+			if (arg.indexOf('RRULE:') === 0)
+				arg = arg.slice(6);
+			arg.split(';').forEach(function(part, k, v) {
+				part = part.split('=');
+				k = part[0].toLowerCase();
+				v = part[1];
+				if (k === 'byday')
+					v = v.split(',');
+				else if (k === 'until') {
+					v = Array.prototype.slice.call(v.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z?$/), 1, 7).map(function(d) {
+						return parseInt(d);
+					});
+					// Months are 0 bases. WTF?!?
+					v[1]--;
+					v = new Date(Date.UTC.apply(Date.UTC, v));
+				}
+				obj[k] = v;
+			});
 
 			for (modeKey in me.modes) {
 				mode = me.modes[modeKey];
-				if (mode.isRule(rule)) {
+				if (mode.isRule(obj)) {
 					me.currentMode = modeKey;
 					break;
 				}
 			}
-			me.$untilEnabled
-				.prop('checked', !!rule.origOptions.until)
-				.trigger('change');
-			if (rule.origOptions.until) {
-				var d = new Date(rule.origOptions.until);
-				me.$until.val(d.toISOString().substring(0, 10)); // this.$until.val(moment(rule.origOptions.until).format('YYYY-MM-DD'));
-			}
-			me.getMode().fromRule(rule);
+			me.setUntilDate(obj.until);
+			me.getMode().fromRuleObj(obj);
 			me.$frequency.val(me.currentMode).trigger('change');
-			this._triggerChange();
+			me._triggerChange();
 		},
 
 		/**
@@ -490,15 +485,57 @@
 			if (!me.$untilEnabled.is(':checked') || !(until = me.$until.val()))
 				return null;
 
-			until = new Date(until + 'T00:00:00' + (tz === null ? 'Z' : ''));
-			if (tz !== null) {
-				// Use RRule timezone functionality to calculate until at given timezone.
-				until = (new RRule({ dtstart: until, tzid: tz })).all(function(_, i) {
-					return i < 1;
-				})[0];
+			until = until + 'T00:00:00';
+			// Check if timezone is present and luxon is available.
+			if (tz && DateTime) {
+				until = DateTime.fromISO(until, { zone: tz }).toJSDate();
+			}
+			// Fallback to native javascript dates.
+			else {
+				until = new Date(until);
 			}
 
 			return until;
+		},
+
+		/**
+		 * Set until date.
+		 *
+		 * @param {String|Date|DateTime} until Until date as Date like object or string representation.
+		 */
+		 setUntilDate: function(until) {
+			var me = this,
+					tz = me.settings.timezone,
+					isUntilEnabled = me.$untilEnabled.is(':checked'),
+					opts, value;
+
+			if (!until) {
+				if (isUntilEnabled) {
+					me.$untilEnabled
+						.prop('checked', false)
+						.trigger('change');
+				}
+				return;
+			}
+
+			// Check if timezone is present and luxon is available.
+			if (tz && DateTime) {
+				opts = { zone: tz };
+				until = DateTime.isDateTime(until) ? until : (typeof until == 'string' ? DateTime.fromISO(until, opts) : DateTime.fromMillis(until.getTime(), opts));
+				value = until.toFormat('yyyy-LL-dd');
+			}
+			// Fallback to native javascript dates.
+			else {
+				until = new Date(until);
+				value = until.getFullYear() + '-' + ('0' + until.getMonth()).slice(-2) + '-' + ('0' + until.getDate()).slice(-2);
+			}
+			me.$until.val(value);
+
+			if (!isUntilEnabled) {
+				me.$untilEnabled
+					.prop('checked', true)
+					.trigger('change');
+			}
 		},
 
 		_triggerChange: function() {
@@ -508,12 +545,12 @@
 	};
 
 	// Register as jQuery plugin.
-	$.fn[pluginName] = function(opts) {
+	$.fn.wsFormsRecurrence = function(opts) {
 		this.each(function() {
 			var me = this,
-					dataKey = 'plugin-' + pluginName;
+					dataKey = 'ws.forms.recurrence';
 			if (!$.data(me, dataKey))
-				$.data(me, dataKey, new Plugin(me, opts));
+				$.data(me, dataKey, new RecurrenceForm(me, opts));
 		});
 		return this;
 	};
@@ -521,7 +558,7 @@
 	// Register ws namespace.
 	var ns = window.ws = (window.ws || {});
 	ns.forms = $.extend(ns.forms || {}, {
-		Recurrence: Plugin
+		Recurrence: RecurrenceForm
 	});
 
 })(jQuery, window);
